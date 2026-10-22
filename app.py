@@ -1,88 +1,109 @@
 import streamlit as st
+from datetime import datetime, timedelta
+import random
 
-st.set_page_config(page_title="TASHEER AI", page_icon="🏢", layout="centered")
+st.set_page_config(page_title="TASHEER AI Global", page_icon="🌍", layout="centered")
 
 WALLET = "TFMRQFHgN8w9q1VM7k8xiwxcKAGC5c2mMH"
 QR_URL = f"https://api.qrserver.com/v1/create-qr-code/?size=500x500&data={WALLET}"
+WHATSAPP = "966500000000"  # غيره لرقمك الحقيقي
 
-# القائمة النهائية - عربي + إنجليزي + السعر الأعلى
+# === LOGO SVG ===
+LOGO_HTML = """
+<div style='text-align:center; margin-bottom:15px;'>
+    <div style='background:linear-gradient(135deg,#0a7a42,#00c853); width:80px; height:80px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:40px; color:white;'>🌍</div>
+    <h1 style='margin:5px 0; color:#0a7a42;'>TASHEER AI</h1>
+    <p style='margin:0; color:gray; font-size:12px;'>GLOBAL VISA & PASSPORT - خليجي | إماراتي | عالمي</p>
+</div>
+"""
+
 COMPANY_PRICING = {
-    "شركة عادية - Regular Company": {"sar": 5000, "usdt": 1333},
-    "شركة تقنية - Tech Company": {"sar": 7500, "usdt": 2000},
-    "مكتب استقدام - Recruitment Office": {"sar": 9900, "usdt": 2640},
-    "شركة نظافة وصيانة - Cleaning & Maintenance": {"sar": 9900, "usdt": 2640},
-    "شركة مقاولات - Construction": {"sar": 12900, "usdt": 3440},
-    "مصنع - Factory / Industrial": {"sar": 14900, "usdt": 3973},
-    "شركة زراعية - Agricultural (ALMARAI / NADEC)": {"sar": 35000, "usdt": 9333},
-    "شركة طبية / مستشفى - Medical (Al Habib / Dallah)": {"sar": 55000, "usdt": 14666},
-    "شركة طيران - Airline (SAUDIA / FLYNAS)": {"sar": 75000, "usdt": 20000},
-    "شركة استثمار / قابضة - Investment (PIF / Holding)": {"sar": 85000, "usdt": 22666},
-    "شركة مياه وكهرباء - Water & Electricity (SEC / NWC / SWCC)": {"sar": 90000, "usdt": 24000},
-    "شركة بترول وبتروكيماويات - Oil & Petrochemical (ARAMCO / SABIC)": {"sar": 100000, "usdt": 26666},
+    "شركة عادية - Regular": {"sar": 5000, "usdt": 1333},
+    "شركة مياه وكهرباء - SEC / NWC (90K)": {"sar": 90000, "usdt": 24000},
+    "شركة بترول - ARAMCO / SABIC (100K)": {"sar": 100000, "usdt": 26666},
+}
+INDIVIDUAL_PRICING = {
+    "🇸🇦 السعودية": {"sar": 499, "usdt": 133},
+    "🇦🇪 الإمارات دبي": {"sar": 399, "usdt": 106},
+    "🇪🇺 شنغن أوروبا": {"sar": 799, "usdt": 213},
+    "🇺🇸 أمريكا": {"sar": 1199, "usdt": 319},
 }
 
-st.markdown("<h2 style='text-align:center'>🏢 TASHEER AI<br><span style='font-size:14px; color:gray'>Smart Visa Management - نظام إدارة التأشيرات الذكي</span></h2>", unsafe_allow_html=True)
-st.success("✅ النظام يعمل | System Online | tasheer-ai.streamlit.app - Official Binance Wallet: TFMRQF...")
+st.markdown(LOGO_HTML, unsafe_allow_html=True)
+st.success(f"✅ Official Wallet: TFMRQF... | TRC20 | 📱 WhatsApp: {WHATSAPP}")
 
-tab1, tab2, tab3 = st.tabs(["🚀 تجربة / Demo", "💳 دفع Binance / Pay", "💰 كل الباقات / Packages"])
+# === WHATSAPP BUTTON ===
+st.markdown(f"""
+<a href='https://wa.me/{WHATSAPP}?text=مرحبا TASHEER AI - ابغى استفسر عن تأشيرة' target='_blank'>
+<button style='background:#25D366; color:white; border:none; padding:12px; border-radius:10px; width:100%; font-weight:800; font-size:16px; cursor:pointer;'>💬 تواصل واتساب مباشر - WhatsApp Chat</button>
+</a>
+""", unsafe_allow_html=True)
 
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["🔍 تشييك", "🏢 شركات", "🛂 أفراد", "📦 تتبع طلبي", "💳 دفع"])
+
+if 'orders' not in st.session_state:
+    st.session_state['orders'] = []
 if 'selected' not in st.session_state:
-    st.session_state['selected'] = "شركة بترول وبتروكيماويات - Oil & Petrochemical (ARAMCO / SABIC)"
+    st.session_state['selected'] = ("ARAMCO", COMPANY_PRICING["شركة بترول - ARAMCO / SABIC (100K)"], "company")
 
 with tab1:
-    st.markdown("### اختر نوع شركتك / Select Company Type")
-    company_name = st.text_input("اسم شركتك / Company Name", "ARAMCO - أرامكو")
-    
-    selected = st.selectbox(
-        "نوع الشركة - Company Type (عربي + English)",
-        list(COMPANY_PRICING.keys()),
-        index=11
-    )
-    st.session_state['selected'] = selected
-    data = COMPANY_PRICING[selected]
-    
-    st.markdown(f"""
-    <div style='background:linear-gradient(135deg,#f0fff4,#e6fffa); border:3px solid #0a7a42; padding:25px; border-radius:20px; text-align:center;'>
-        <div style='font-size:16px; color:#333; font-weight:700;'>{selected}</div>
-        <div style='font-size:42px; font-weight:900; color:#0a7a42; margin:10px 0;'>{data['sar']:,} SAR</div>
-        <div style='font-size:28px; font-weight:800; color:#000;'>= {data['usdt']:,} USDT / شهر - per month</div>
-        <div style='margin-top:10px; color:gray; font-size:12px;'>Original Wallet: TFMRQFHgN8w9q1VM7k8xiwxcKAGC5c2mMH | Network TRC20</div>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    if st.button("احسب سعري / Calculate My Price - تأكيد", type="primary", use_container_width=True):
-        st.balloons()
-        st.success(f"✅ تم اختيار باقتك / Package Selected: {company_name} - {data['sar']:,} SAR ({data['usdt']:,} USDT)")
+    st.markdown("### 🔍 تشييك جواز وتأشيرة")
+    p_no = st.text_input("رقم الجواز / Passport No.", "A12345678")
+    v_no = st.text_input("رقم التأشيرة / Visa No.", "6001234567")
+    nat = st.selectbox("الجنسية", ["سعودي", "إماراتي", "مصري", "هندي"])
+    v_country = st.selectbox("دولة التأشيرة", ["السعودية", "الإمارات", "شنغن", "أمريكا"])
+    if st.button("افحص الآن / Check", type="primary", use_container_width=True):
+        expiry = datetime.now() + timedelta(days=random.randint(10, 700))
+        color = "green" if expiry > datetime.now() + timedelta(days=90) else "red"
+        st.markdown(f"<div style='border:2px solid {color}; padding:15px; border-radius:10px;'><b>رقم الجواز:</b> {p_no}<br><b>الحالة:</b> {'✅ ساري' if color=='green' else '❌ منتهي - يحتاج تجديد'}<br><b>ينتهي:</b> {expiry.strftime('%Y-%m-%d')} - باقي {(expiry-datetime.now()).days} يوم</div>", unsafe_allow_html=True)
+        if color=="red":
+            st.warning("يحتاج تجديد - اضغط دفع للتجديد السريع")
 
 with tab2:
-    data = COMPANY_PRICING[st.session_state['selected']]
-    st.markdown(f"### 💳 الدفع عبر Binance - Pay via Binance - {data['sar']:,} SAR / {data['usdt']:,} USDT")
-    st.markdown(f"**الباقة المختارة / Selected:** {st.session_state['selected']}")
-    
-    c1, c2 = st.columns(2)
-    with c1:
-        st.metric("SAR / شهر - per month", f"{data['sar']:,} SAR")
-        st.metric("USDT / شهر - per month", f"{data['usdt']:,} USDT")
-        st.divider()
-        st.markdown("**عنوان المحفظة / Wallet Address (TRC20):**")
-        st.code(WALLET)
-        st.info(f"الشبكة: TRC20 - TRON\nNetwork: TRC20\n\nالمبلغ المطلوب: {data['usdt']} USDT")
-        st.warning("⚠️ تنبيه: أرسل فقط عبر شبكة TRC20 / Send ONLY via TRC20")
-    
-    with c2:
-        st.markdown("**امسح للدفع - Scan to Pay - QR الأصلي من Binance**")
-        st.image(QR_URL, caption=f"Pay {data['usdt']} USDT - TRC20 - {WALLET[:10]}...")
-        st.file_uploader("ارفع إيصال التحويل / Upload Receipt", type=['png','jpg','jpeg','pdf'])
-        if st.button("تأكيد الدفع / Confirm Payment", use_container_width=True, type="primary"):
-            st.success(f"✅ تم استلام طلبك {data['sar']:,} SAR - سنتواصل معك / Request Received!")
+    sel = st.selectbox("اختر الشركة", list(COMPANY_PRICING.keys()), index=2)
+    data = COMPANY_PRICING[sel]
+    st.metric("SAR", f"{data['sar']:,} | {data['usdt']:,} USDT")
+    st.session_state['selected'] = (sel, data, "company")
 
 with tab3:
-    st.markdown("### 💰 جميع الباقات - All Packages - عربي + English")
-    for name, d in COMPANY_PRICING.items():
-        st.markdown(f"""
-        <div style='border:1px solid #eee; padding:12px; border-radius:10px; margin:5px 0;'>
-            <b>{name}</b><br>
-            <span style='color:#0a7a42; font-weight:800; font-size:18px;'>{d['sar']:,} SAR</span> 
-            <span style='color:#666;'>= {d['usdt']:,} USDT / شهر</span>
-        </div>
-        """, unsafe_allow_html=True)
+    sel = st.selectbox("اختر التأشيرة", list(INDIVIDUAL_PRICING.keys()))
+    data = INDIVIDUAL_PRICING[sel]
+    st.metric("SAR", f"{data['sar']:,} | {data['usdt']:,} USDT")
+    st.session_state['selected'] = (sel, data, "individual")
+
+with tab4:
+    st.markdown("### 📦 تتبع طلبك / Track Order")
+    track_no = st.text_input("ادخل رقم الطلب / رقم الجواز للتتبع", "TRK-12345")
+    if st.button("تتبع / Track"):
+        statuses = ["🟡 تم استلام الطلب - Received", "🔵 قيد المعالجة في الجوازات - Processing", "🟢 تمت الموافقة - Approved", "📦 جاهز للاستلام - Ready"]
+        progress = random.randint(0,3)
+        st.progress((progress+1)/4)
+        for i, s in enumerate(statuses):
+            if i <= progress:
+                st.markdown(f"✅ {s}")
+            else:
+                st.markdown(f"⬜ {s}")
+        st.info(f"رقم التتبع: {track_no} | آخر تحديث: {datetime.now().strftime('%Y-%m-%d %H:%M')}")
+    
+    st.divider()
+    st.markdown("#### طلباتي السابقة / My Orders")
+    if st.session_state['orders']:
+        for o in st.session_state['orders']:
+            st.markdown(f"- {o['name']} - {o['date']} - {o['status']}")
+    else:
+        st.caption("لا يوجد طلبات بعد - No orders yet")
+
+with tab5:
+    name, data, _ = st.session_state['selected']
+    st.markdown(f"### 💳 دفع - {name} - {data['sar']:,} SAR = {data['usdt']:,} USDT")
+    c1, c2 = st.columns(2)
+    with c1:
+        st.code(WALLET)
+        st.text_input("رقم الطلب / Order No.", f"TRK-{random.randint(10000,99999)}")
+        if st.button("تأكيد ودفع / Confirm & Pay", type="primary", use_container_width=True):
+            st.session_state['orders'].append({"name": name, "date": datetime.now().strftime('%Y-%m-%d'), "status": "تم الدفع - Paid"})
+            st.balloons()
+            st.success(f"✅ تم الدفع {data['sar']} SAR - رقم تتبعك: TRK-{random.randint(10000,99999)} - تواصل واتساب للمتابعة")
+            st.markdown(f"[💬 متابعة واتساب](https://wa.me/{WHATSAPP}?text=تم الدفع {name} - {data['sar']} SAR)")
+    with c2:
+        st.image(QR_URL, caption=f"Pay {data['usdt']} USDT - TRC20")
