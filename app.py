@@ -2,108 +2,131 @@ import streamlit as st
 from datetime import datetime, timedelta
 import random
 
-st.set_page_config(page_title="TASHEER AI Global", page_icon="🌍", layout="centered")
+st.set_page_config(page_title="TASHEER AI - Login", page_icon="🔐", layout="centered")
+
+# === بيانات الدخول - تقدر تغيرها ===
+USERS = {
+    "admin": {"password": "Tasheer2024!", "name": "Gomez Admin", "email": "report.gomez@gmail.com", "phone": "00966540450738"},
+    "gomez": {"password": "123456", "name": "Report Gomez", "email": "report.gomez@gmail.com", "phone": "00966540450738"},
+    "client": {"password": "client123", "name": "عميل - Client", "email": "client@test.com", "phone": ""},
+}
 
 WALLET = "TFMRQFHgN8w9q1VM7k8xiwxcKAGC5c2mMH"
 QR_URL = f"https://api.qrserver.com/v1/create-qr-code/?size=500x500&data={WALLET}"
-WHATSAPP = "966500000000"  # غيره لرقمك الحقيقي
+WHATSAPP = "966540450738"
+EMAIL = "report.gomez@gmail.com"
 
-# === LOGO SVG ===
-LOGO_HTML = """
-<div style='text-align:center; margin-bottom:15px;'>
-    <div style='background:linear-gradient(135deg,#0a7a42,#00c853); width:80px; height:80px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:40px; color:white;'>🌍</div>
-    <h1 style='margin:5px 0; color:#0a7a42;'>TASHEER AI</h1>
-    <p style='margin:0; color:gray; font-size:12px;'>GLOBAL VISA & PASSPORT - خليجي | إماراتي | عالمي</p>
+# === نظام تسجيل الدخول ===
+if 'logged_in' not in st.session_state:
+    st.session_state['logged_in'] = False
+if 'username' not in st.session_state:
+    st.session_state['username'] = ""
+
+if not st.session_state['logged_in']:
+    st.markdown("""
+    <div style='text-align:center; margin-bottom:20px;'>
+        <div style='background:linear-gradient(135deg,#0a7a42,#00c853); width:90px; height:90px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:45px; color:white; margin:auto;'>🔐</div>
+        <h1 style='color:#0a7a42;'>TASHEER AI</h1>
+        <p style='color:gray;'>تسجيل الدخول - Login</p>
+        <p style='color:#0a7a42; font-size:12px; font-weight:700;'>📱 00966540450738 | ✉️ report.gomez@gmail.com</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    with st.form("login_form"):
+        username = st.text_input("اسم المستخدم / Username", placeholder="admin أو gomez أو client")
+        password = st.text_input("كلمة المرور / Password", type="password", placeholder="••••••••")
+        col1, col2 = st.columns(2)
+        with col1:
+            login_btn = st.form_submit_button("دخول / Login", type="primary", use_container_width=True)
+        with col2:
+            st.form_submit_button("نسيت الباسورد؟ تواصل واتساب", use_container_width=True)
+        
+        if login_btn:
+            if username in USERS and USERS[username]["password"] == password:
+                st.session_state['logged_in'] = True
+                st.session_state['username'] = username
+                st.session_state['user_info'] = USERS[username]
+                st.success(f"✅ مرحبا {USERS[username]['name']} - جاري الدخول...")
+                st.rerun()
+            else:
+                st.error("❌ اسم المستخدم أو كلمة المرور خطأ - Wrong username or password")
+    
+    st.divider()
+    st.info("""
+    **حسابات تجريبية / Demo Accounts:**
+    - 👑 **admin** / **Tasheer2024!** (أدمن - Gomez)
+    - 👤 **gomez** / **123456** (Report Gomez)
+    - 👥 **client** / **client123** (عميل عادي)
+    
+    📱 للدعم: 00966540450738 | ✉️ report.gomez@gmail.com
+    """)
+    st.stop()  # يوقف هنا إذا مو مسجل دخول
+
+# === بعد تسجيل الدخول - الموقع الكامل ===
+user = st.session_state['user_info']
+st.markdown(f"""
+<div style='background:#f0fff4; padding:10px; border-radius:10px; border:1px solid #0a7a42; display:flex; justify-content:space-between; align-items:center;'>
+    <span>👋 مرحبا <b>{user['name']}</b> ({st.session_state['username']}) | 📱 {user['phone']} | ✉️ {user['email']}</span>
+    <span style='font-size:12px; color:gray;'>TASHEER AI Global</span>
 </div>
-"""
+""", unsafe_allow_html=True)
 
+if st.button("🚪 تسجيل خروج / Logout", type="secondary"):
+    st.session_state['logged_in'] = False
+    st.session_state['username'] = ""
+    st.rerun()
+
+# === بقية الموقع ===
 COMPANY_PRICING = {
-    "شركة عادية - Regular": {"sar": 5000, "usdt": 1333},
     "شركة مياه وكهرباء - SEC / NWC (90K)": {"sar": 90000, "usdt": 24000},
     "شركة بترول - ARAMCO / SABIC (100K)": {"sar": 100000, "usdt": 26666},
 }
 INDIVIDUAL_PRICING = {
     "🇸🇦 السعودية": {"sar": 499, "usdt": 133},
-    "🇦🇪 الإمارات دبي": {"sar": 399, "usdt": 106},
-    "🇪🇺 شنغن أوروبا": {"sar": 799, "usdt": 213},
+    "🇦🇪 الإمارات": {"sar": 399, "usdt": 106},
+    "🇪🇺 شنغن": {"sar": 799, "usdt": 213},
     "🇺🇸 أمريكا": {"sar": 1199, "usdt": 319},
 }
 
-st.markdown(LOGO_HTML, unsafe_allow_html=True)
-st.success(f"✅ Official Wallet: TFMRQF... | TRC20 | 📱 WhatsApp: {WHATSAPP}")
+st.markdown(f"<div style='text-align:center;'><h3>🌍 TASHEER AI Global</h3><p style='font-size:11px;color:gray;'>📱 00966540450738 | ✉️ {EMAIL} | Wallet: TFMRQF... TRC20</p></div>", unsafe_allow_html=True)
+st.markdown(f"<a href='https://wa.me/{WHATSAPP}?text=مرحبا من حساب {st.session_state['username']}' target='_blank'><button style='background:#25D366; color:white; border:none; padding:10px; border-radius:8px; width:100%; font-weight:800;'>💬 واتساب - 00966540450738</button></a>", unsafe_allow_html=True)
 
-# === WHATSAPP BUTTON ===
-st.markdown(f"""
-<a href='https://wa.me/{WHATSAPP}?text=مرحبا TASHEER AI - ابغى استفسر عن تأشيرة' target='_blank'>
-<button style='background:#25D366; color:white; border:none; padding:12px; border-radius:10px; width:100%; font-weight:800; font-size:16px; cursor:pointer;'>💬 تواصل واتساب مباشر - WhatsApp Chat</button>
-</a>
-""", unsafe_allow_html=True)
-
-tab1, tab2, tab3, tab4, tab5 = st.tabs(["🔍 تشييك", "🏢 شركات", "🛂 أفراد", "📦 تتبع طلبي", "💳 دفع"])
-
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["🔍 تشييك", "🏢 شركات", "🛂 أفراد", "📦 تتبع", "💳 دفع"])
 if 'orders' not in st.session_state:
     st.session_state['orders'] = []
 if 'selected' not in st.session_state:
     st.session_state['selected'] = ("ARAMCO", COMPANY_PRICING["شركة بترول - ARAMCO / SABIC (100K)"], "company")
 
 with tab1:
-    st.markdown("### 🔍 تشييك جواز وتأشيرة")
-    p_no = st.text_input("رقم الجواز / Passport No.", "A12345678")
-    v_no = st.text_input("رقم التأشيرة / Visa No.", "6001234567")
-    nat = st.selectbox("الجنسية", ["سعودي", "إماراتي", "مصري", "هندي"])
-    v_country = st.selectbox("دولة التأشيرة", ["السعودية", "الإمارات", "شنغن", "أمريكا"])
-    if st.button("افحص الآن / Check", type="primary", use_container_width=True):
-        expiry = datetime.now() + timedelta(days=random.randint(10, 700))
-        color = "green" if expiry > datetime.now() + timedelta(days=90) else "red"
-        st.markdown(f"<div style='border:2px solid {color}; padding:15px; border-radius:10px;'><b>رقم الجواز:</b> {p_no}<br><b>الحالة:</b> {'✅ ساري' if color=='green' else '❌ منتهي - يحتاج تجديد'}<br><b>ينتهي:</b> {expiry.strftime('%Y-%m-%d')} - باقي {(expiry-datetime.now()).days} يوم</div>", unsafe_allow_html=True)
-        if color=="red":
-            st.warning("يحتاج تجديد - اضغط دفع للتجديد السريع")
+    p_no = st.text_input("رقم الجواز", "A12345678")
+    if st.button("افحص الآن", type="primary", use_container_width=True):
+        expiry = datetime.now() + timedelta(days=random.randint(10,700))
+        st.success(f"الجواز {p_no} - ينتهي {expiry.strftime('%Y-%m-%d')} - الحالة: {'✅ ساري' if expiry>datetime.now() else '❌ منتهي'}")
 
 with tab2:
-    sel = st.selectbox("اختر الشركة", list(COMPANY_PRICING.keys()), index=2)
-    data = COMPANY_PRICING[sel]
-    st.metric("SAR", f"{data['sar']:,} | {data['usdt']:,} USDT")
-    st.session_state['selected'] = (sel, data, "company")
+    sel = st.selectbox("شركة", list(COMPANY_PRICING.keys()), index=1)
+    st.metric("سعر", f"{COMPANY_PRICING[sel]['sar']:,} SAR")
+    st.session_state['selected'] = (sel, COMPANY_PRICING[sel], "company")
 
 with tab3:
-    sel = st.selectbox("اختر التأشيرة", list(INDIVIDUAL_PRICING.keys()))
-    data = INDIVIDUAL_PRICING[sel]
-    st.metric("SAR", f"{data['sar']:,} | {data['usdt']:,} USDT")
-    st.session_state['selected'] = (sel, data, "individual")
+    sel = st.selectbox("تأشيرة", list(INDIVIDUAL_PRICING.keys()))
+    st.metric("سعر", f"{INDIVIDUAL_PRICING[sel]['sar']:,} SAR")
+    st.session_state['selected'] = (sel, INDIVIDUAL_PRICING[sel], "individual")
 
 with tab4:
-    st.markdown("### 📦 تتبع طلبك / Track Order")
-    track_no = st.text_input("ادخل رقم الطلب / رقم الجواز للتتبع", "TRK-12345")
-    if st.button("تتبع / Track"):
-        statuses = ["🟡 تم استلام الطلب - Received", "🔵 قيد المعالجة في الجوازات - Processing", "🟢 تمت الموافقة - Approved", "📦 جاهز للاستلام - Ready"]
-        progress = random.randint(0,3)
-        st.progress((progress+1)/4)
-        for i, s in enumerate(statuses):
-            if i <= progress:
-                st.markdown(f"✅ {s}")
-            else:
-                st.markdown(f"⬜ {s}")
-        st.info(f"رقم التتبع: {track_no} | آخر تحديث: {datetime.now().strftime('%Y-%m-%d %H:%M')}")
-    
-    st.divider()
-    st.markdown("#### طلباتي السابقة / My Orders")
-    if st.session_state['orders']:
-        for o in st.session_state['orders']:
-            st.markdown(f"- {o['name']} - {o['date']} - {o['status']}")
-    else:
-        st.caption("لا يوجد طلبات بعد - No orders yet")
+    track = st.text_input("رقم التتبع", "TRK-12345")
+    if st.button("تتبع"):
+        st.progress(random.random())
+        st.info(f"الطلب {track} - قيد المعالجة - للدعم 00966540450738")
 
 with tab5:
     name, data, _ = st.session_state['selected']
-    st.markdown(f"### 💳 دفع - {name} - {data['sar']:,} SAR = {data['usdt']:,} USDT")
+    st.markdown(f"### دفع {name} - {data['sar']:,} SAR = {data['usdt']:,} USDT")
     c1, c2 = st.columns(2)
     with c1:
         st.code(WALLET)
-        st.text_input("رقم الطلب / Order No.", f"TRK-{random.randint(10000,99999)}")
-        if st.button("تأكيد ودفع / Confirm & Pay", type="primary", use_container_width=True):
-            st.session_state['orders'].append({"name": name, "date": datetime.now().strftime('%Y-%m-%d'), "status": "تم الدفع - Paid"})
+        if st.button("تأكيد دفع", type="primary", use_container_width=True):
             st.balloons()
-            st.success(f"✅ تم الدفع {data['sar']} SAR - رقم تتبعك: TRK-{random.randint(10000,99999)} - تواصل واتساب للمتابعة")
-            st.markdown(f"[💬 متابعة واتساب](https://wa.me/{WHATSAPP}?text=تم الدفع {name} - {data['sar']} SAR)")
+            st.success(f"تم - حساب {st.session_state['username']} - تابع واتساب 00966540450738")
     with c2:
-        st.image(QR_URL, caption=f"Pay {data['usdt']} USDT - TRC20")
+        st.image(QR_URL)
