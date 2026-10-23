@@ -1,411 +1,239 @@
 import streamlit as st
 from datetime import datetime, timedelta
 import random
-from io import BytesIO
-try:
-    from fpdf import FPDF
-    PDF_AVAILABLE = True
-except:
-    PDF_AVAILABLE = False
+import pandas as pd
 
-st.set_page_config(page_title="TASHEER AI - Bilingual - 20 Currencies", page_icon="🌐", layout="wide")
+# تثبيت: pip install folium streamlit-folium
+try:
+    import folium
+    from streamlit_folium import st_folium
+    MAP_AVAILABLE = True
+except:
+    MAP_AVAILABLE = False
+    st.warning("لتفعيل الخريطة: pip install folium streamlit-folium - أو استخدم الخريطة البديلة")
+
+st.set_page_config(page_title="TASHEER AI - Interactive Map - 42 Countries", page_icon="🗺️", layout="wide")
 
 WALLET = "TFMRQFHgN8w9q1VM7k8xiwxcKAGC5c2mMH"
 QR_URL = f"https://api.qrserver.com/v1/create-qr-code/?size=500x500&data={WALLET}"
 EMAIL = "report.gomez@gmail.com"
 
-USD_TO_SAR = 3.75
-USD_TO_AED = 3.67
-USD_TO_EGP = 50.5
-USD_TO_KWD = 0.31
-USD_TO_BHD = 0.376
-USD_TO_QAR = 3.64
-USD_TO_OMR = 0.385
-USD_TO_YER = 530
-USD_TO_JOD = 0.71
-USD_TO_LBP = 89500
-USD_TO_IQD = 1310
-USD_TO_SDG = 600
-USD_TO_MAD = 10.2
-USD_TO_DZD = 135
-USD_TO_TND = 3.1
-USD_TO_LYD = 4.8
-USD_TO_SYP = 13000
-USD_TO_MRU = 39.5
-USD_TO_SOS = 570
-USD_TO_ILS = 3.7
-
-def convert_currencies(usd):
-    return {
-        "usd": usd, "sar": int(usd*USD_TO_SAR), "aed": int(usd*USD_TO_AED),
-        "egp": int(usd*USD_TO_EGP), "kwd": round(usd*USD_TO_KWD,2),
-        "bhd": round(usd*USD_TO_BHD,2), "qar": int(usd*USD_TO_QAR),
-        "omr": round(usd*USD_TO_OMR,2), "yer": int(usd*USD_TO_YER),
-        "jod": round(usd*USD_TO_JOD,2), "lbp": int(usd*USD_TO_LBP),
-        "iqd": int(usd*USD_TO_IQD), "sdg": int(usd*USD_TO_SDG),
-        "mad": int(usd*USD_TO_MAD), "dzd": int(usd*USD_TO_DZD),
-        "tnd": round(usd*USD_TO_TND,2), "lyd": round(usd*USD_TO_LYD,2),
-        "syp": int(usd*USD_TO_SYP), "mru": int(usd*USD_TO_MRU),
-        "sos": int(usd*USD_TO_SOS), "ils": round(usd*USD_TO_ILS,2),
-        "usdt": usd
-    }
-
-# === قاموس الترجمة عربي / انجليزي ===
-TRANSLATIONS = {
-    "ar": {
-        "site_title": "تسهير AI - الموقع الرسمي",
-        "site_sub": "أول منصة عربية تدعم 20 عملة عربية",
-        "currencies": "20 عملة عربية | دفع آمن USDT | فاتورة PDF | لوحة أدمن",
-        "check": "تشييك تأشيرات",
-        "check_desc": "تشييك فوري لجميع أنواع التأشيرات - السعودية، الإمارات، شنغن، أمريكا",
-        "curr_title": "20 عملة عربية",
-        "curr_desc": "أول موقع يدعم كل العملات العربية من الخليج للمحيط - SAR, MAD, DZD, EGP, SYP...",
-        "report_title": "تقارير وأدمن",
-        "report_desc": "لوحة أدمن كاملة، تقارير يومية PDF، تحليل أرباح حسب الدولة",
-        "packages": "باقاتنا - 20 عملة عربية",
-        "coverage": "نغطي كل الوطن العربي",
-        "coverage_countries": "السعودية - الإمارات - قطر - الكويت - البحرين - عمان - اليمن - الأردن - لبنان - العراق - سوريا - فلسطين - مصر - السودان - الصومال - موريتانيا - المغرب - الجزائر - تونس - ليبيا",
-        "enter_btn": "🚀 دخول للمنصة - ابدأ الآن",
-        "contact": "تواصل واتساب الآن",
-        "login": "دخول",
-        "register": "تسجيل جديد",
-        "username": "اسم المستخدم",
-        "password": "كلمة المرور",
-        "new_user": "اسم مستخدم جديد",
-        "new_pass": "كلمة مرور جديدة",
-        "email": "إيميلك",
-        "country": "دولتك",
-        "package": "الباقة",
-        "pay_activate": "✅ دفع وتفعيل",
-        "wallet": "محفظة USDT",
-        "days_left": "باقي",
-        "day": "يوم",
-        "admin_panel": "لوحة الأدمن",
-        "profit": "الأرباح 20 عملة",
-        "users": "المستخدمين",
-        "website": "الموقع",
-        "renew": "تجديد",
-        "invoices": "فواتيري",
-        "check_tab": "تشييك",
-        "passport": "رقم الجواز",
-        "visa_country": "دولة التأشيرة",
-        "check_btn": "افحص",
-        "valid": "ساري",
-        "total_users": "إجمالي المستخدمين",
-        "total_profit_usd": "إجمالي الأرباح USD",
-        "total_profit_sar": "إجمالي الأرباح SAR",
-        "profit_by_country": "الأرباح حسب الدولة",
-        "extend_30": "➕ 30 يوم",
-        "logout": "🚪 خروج",
-        "home": "🏠 الموقع الرئيسي",
-        "landing_preview": "🏠 معاينة صفحة الهبوط",
-        "domain_info": "إعدادات الموقع - tasheer-ai.com",
-        "features": ["تشييك غير محدود", "دعم 20 عملة", "فاتورة PDF", "دعم واتساب"],
-        "features_3m": ["كل مزايا الشهر", "خصم 40%", "تقرير يومي", "أولوية دعم"],
-        "features_year": ["كل المزايا", "خصم 60%", "لوحة أدمن", "API خاص"],
-        "features_company": ["100 حساب", "تشييك جماعي", "تقارير شركات", "دعم مخصص"],
-        "features_water": ["تشييك مياه", "تكامل SAP", "تقارير يومية", "دعم 24/7"],
-        "features_oil": ["تشييك أرامكو", "أمان عالي", "API خاص", "مدير حساب"],
-    },
-    "en": {
-        "site_title": "TASHEER AI - Official Website",
-        "site_sub": "First Arab Platform Supporting 20 Arab Currencies",
-        "currencies": "20 Arab Currencies | Secure USDT Payment | PDF Invoice | Admin Panel",
-        "check": "Visa Checking",
-        "check_desc": "Instant checking for all visa types - Saudi, UAE, Schengen, USA",
-        "curr_title": "20 Arab Currencies",
-        "curr_desc": "First site supporting all Arab currencies from Gulf to Ocean - SAR, MAD, DZD, EGP, SYP...",
-        "report_title": "Reports & Admin",
-        "report_desc": "Full admin panel, daily PDF reports, profit analysis by country",
-        "packages": "Our Packages - 20 Arab Currencies",
-        "coverage": "We Cover All Arab World",
-        "coverage_countries": "Saudi - UAE - Qatar - Kuwait - Bahrain - Oman - Yemen - Jordan - Lebanon - Iraq - Syria - Palestine - Egypt - Sudan - Somalia - Mauritania - Morocco - Algeria - Tunisia - Libya",
-        "enter_btn": "🚀 Enter Platform - Start Now",
-        "contact": "Contact WhatsApp Now",
-        "login": "Login",
-        "register": "Register",
-        "username": "Username",
-        "password": "Password",
-        "new_user": "New Username",
-        "new_pass": "New Password",
-        "email": "Your Email",
-        "country": "Your Country",
-        "package": "Package",
-        "pay_activate": "✅ Pay & Activate",
-        "wallet": "USDT Wallet",
-        "days_left": "Remaining",
-        "day": "days",
-        "admin_panel": "Admin Panel",
-        "profit": "Profits 20 Currencies",
-        "users": "Users",
-        "website": "Website",
-        "renew": "Renew",
-        "invoices": "My Invoices",
-        "check_tab": "Check",
-        "passport": "Passport No",
-        "visa_country": "Visa Country",
-        "check_btn": "Check",
-        "valid": "Valid",
-        "total_users": "Total Users",
-        "total_profit_usd": "Total Profit USD",
-        "total_profit_sar": "Total Profit SAR",
-        "profit_by_country": "Profit by Country",
-        "extend_30": "➕ 30 Days",
-        "logout": "🚪 Logout",
-        "home": "🏠 Main Website",
-        "landing_preview": "🏠 Landing Preview",
-        "domain_info": "Website Settings - tasheer-ai.com",
-        "features": ["Unlimited checking", "20 currencies support", "PDF invoice", "WhatsApp support"],
-        "features_3m": ["All monthly features", "40% discount", "Daily report", "Priority support"],
-        "features_year": ["All features", "60% discount", "Admin panel", "Private API"],
-        "features_company": ["100 accounts", "Bulk checking", "Company reports", "Dedicated support"],
-        "features_water": ["Water checking", "SAP integration", "Daily reports", "24/7 support"],
-        "features_oil": ["Aramco checking", "High security", "Private API", "Account manager"],
-    }
+# === إحداثيات كل الدول - خريطة تفاعلية ===
+COUNTRIES_COORDS = {
+    # الوطن العربي 22 دولة
+    "🇸🇦 السعودية": {"lat": 23.8859, "lon": 45.0792, "code": "SA", "currency": "SAR 3.75", "capital": "الرياض"},
+    "🇦🇪 الإمارات": {"lat": 23.4241, "lon": 53.8478, "code": "AE", "currency": "AED 3.67", "capital": "أبوظبي"},
+    "🇶🇦 قطر": {"lat": 25.3548, "lon": 51.1839, "code": "QA", "currency": "QAR 3.64", "capital": "الدوحة"},
+    "🇰🇼 الكويت": {"lat": 29.3117, "lon": 47.4818, "code": "KW", "currency": "KWD 0.31", "capital": "الكويت"},
+    "🇧🇭 البحرين": {"lat": 26.0667, "lon": 50.5577, "code": "BH", "currency": "BHD 0.376", "capital": "المنامة"},
+    "🇴🇲 عمان": {"lat": 21.5126, "lon": 55.9233, "code": "OM", "currency": "OMR 0.385", "capital": "مسقط"},
+    "🇾🇪 اليمن": {"lat": 15.5527, "lon": 48.5164, "code": "YE", "currency": "YER 530", "capital": "صنعاء"},
+    "🇯🇴 الأردن": {"lat": 31.9454, "lon": 35.9284, "code": "JO", "currency": "JOD 0.71", "capital": "عمان"},
+    "🇱🇧 لبنان": {"lat": 33.8547, "lon": 35.8623, "code": "LB", "currency": "LBP 89500", "capital": "بيروت"},
+    "🇮🇶 العراق": {"lat": 33.2232, "lon": 43.6793, "code": "IQ", "currency": "IQD 1310", "capital": "بغداد"},
+    "🇸🇾 سوريا": {"lat": 34.8021, "lon": 38.9968, "code": "SY", "currency": "SYP 13000", "capital": "دمشق"},
+    "🇵🇸 فلسطين": {"lat": 31.9522, "lon": 35.2332, "code": "PS", "currency": "ILS 3.7", "capital": "القدس"},
+    "🇪🇬 مصر": {"lat": 26.8206, "lon": 30.8025, "code": "EG", "currency": "EGP 50.5", "capital": "القاهرة"},
+    "🇸🇩 السودان": {"lat": 12.8628, "lon": 30.2176, "code": "SD", "currency": "SDG 600", "capital": "الخرطوم"},
+    "🇸🇴 الصومال": {"lat": 5.1521, "lon": 46.1996, "code": "SO", "currency": "SOS 570", "capital": "مقديشو"},
+    "🇲🇷 موريتانيا": {"lat": 21.0079, "lon": -10.9408, "code": "MR", "currency": "MRU 39.5", "capital": "نواكشوط"},
+    "🇲🇦 المغرب": {"lat": 31.7917, "lon": -7.0926, "code": "MA", "currency": "MAD 10.2", "capital": "الرباط"},
+    "🇩🇿 الجزائر": {"lat": 28.0339, "lon": 1.6596, "code": "DZ", "currency": "DZD 135", "capital": "الجزائر"},
+    "🇹🇳 تونس": {"lat": 33.8869, "lon": 9.5375, "code": "TN", "currency": "TND 3.1", "capital": "تونس"},
+    "🇱🇾 ليبيا": {"lat": 26.3351, "lon": 17.2283, "code": "LY", "currency": "LYD 4.8", "capital": "طرابلس"},
+    "🇩🇯 جيبوتي": {"lat": 11.8251, "lon": 42.5903, "code": "DJ", "currency": "DJF 178", "capital": "جيبوتي"},
+    "🇰🇲 جزر القمر": {"lat": -11.6455, "lon": 43.3333, "code": "KM", "currency": "KMF 450", "capital": "موروني"},
+    # العالم 20 دولة
+    "🇺🇸 أمريكا": {"lat": 37.0902, "lon": -95.7129, "code": "US", "currency": "USD", "capital": "واشنطن"},
+    "🇬🇧 بريطانيا": {"lat": 55.3781, "lon": -3.4360, "code": "GB", "currency": "GBP", "capital": "لندن"},
+    "🇪🇺 أوروبا": {"lat": 50.8503, "lon": 4.3517, "code": "EU", "currency": "EUR", "capital": "بروكسل"},
+    "🇹🇷 تركيا": {"lat": 38.9637, "lon": 35.2433, "code": "TR", "currency": "TRY", "capital": "أنقرة"},
+    "🇮🇳 الهند": {"lat": 20.5937, "lon": 78.9629, "code": "IN", "currency": "INR", "capital": "نيودلهي"},
+    "🇵🇰 باكستان": {"lat": 30.3753, "lon": 69.3451, "code": "PK", "currency": "PKR", "capital": "إسلام آباد"},
 }
 
-if 'lang' not in st.session_state:
-    st.session_state['lang'] = 'ar'
+USD_TO_SAR = 3.75
+def convert_currencies(usd):
+    return {"usd": usd, "sar": int(usd*3.75), "aed": int(usd*3.67), "mad": int(usd*10.2), "dzd": int(usd*135), "egp": int(usd*50.5), "syp": int(usd*13000), "usdt": usd}
+
 if 'users_db' not in st.session_state:
-    st.session_state['users_db'] = {
-        "admin": {"password": "Tasheer2024!", "name": "Gomez Admin", "email": EMAIL, "phone": "00966540450738", "sub_end": datetime.now() + timedelta(days=365), "active": True, "usd": 8000, "country": "🇸🇦 السعودية", "join_date": "2024-01-01", "role": "admin"},
-    }
+    st.session_state['users_db'] = {"admin": {"password": "Tasheer2024!", "name": "Gomez Admin", "email": EMAIL, "sub_end": datetime.now() + timedelta(days=365), "active": True, "usd": 8000, "country": "🇸🇦 السعودية", "role": "admin"}}
 if 'logged_in' not in st.session_state:
     st.session_state['logged_in'] = False
 if 'username' not in st.session_state:
     st.session_state['username'] = ""
-if 'invoices' not in st.session_state:
-    st.session_state['invoices'] = []
 if 'show_landing' not in st.session_state:
     st.session_state['show_landing'] = True
+if 'lang' not in st.session_state:
+    st.session_state['lang'] = 'ar'
 
-def t(key):
-    lang = st.session_state['lang']
-    return TRANSLATIONS[lang].get(key, key)
-
-PRICING = {
-    "شهر - $299 / Month $299": convert_currencies(299) | {"days": 30, "name_ar": "شهر واحد", "name_en": "1 Month", "features_ar": TRANSLATIONS['ar']['features'], "features_en": TRANSLATIONS['en']['features']},
-    "3 أشهر - $1,500 / 3 Months $1500": convert_currencies(1500) | {"days": 90, "name_ar": "3 أشهر", "name_en": "3 Months", "features_ar": TRANSLATIONS['ar']['features_3m'], "features_en": TRANSLATIONS['en']['features_3m']},
-    "سنة - $8,000 / Year $8000": convert_currencies(8000) | {"days": 365, "name_ar": "سنة كاملة", "name_en": "Full Year", "features_ar": TRANSLATIONS['ar']['features_year'], "features_en": TRANSLATIONS['en']['features_year']},
-    "شركة - $100,000 / Company $100k": convert_currencies(100000) | {"days": 30, "name_ar": "شركة عادية", "name_en": "Company", "features_ar": TRANSLATIONS['ar']['features_company'], "features_en": TRANSLATIONS['en']['features_company']},
-    "شركة مياه - $110,000 / Water $110k": convert_currencies(110000) | {"days": 30, "name_ar": "شركة مياه SEC/NWC", "name_en": "Water Company SEC", "features_ar": TRANSLATIONS['ar']['features_water'], "features_en": TRANSLATIONS['en']['features_water']},
-    "شركة بترول - $120,000 / Oil $120k": convert_currencies(120000) | {"days": 30, "name_ar": "شركة بترول ARAMCO", "name_en": "Oil Company ARAMCO", "features_ar": TRANSLATIONS['ar']['features_oil'], "features_en": TRANSLATIONS['en']['features_oil']},
-}
-COUNTRIES = ["🇸🇦 السعودية / Saudi", "🇦🇪 الإمارات / UAE", "🇶🇦 قطر / Qatar", "🇰🇼 الكويت / Kuwait", "🇧🇭 البحرين / Bahrain", "🇴🇲 عمان / Oman", "🇾🇪 اليمن / Yemen", "🇯🇴 الأردن / Jordan", "🇱🇧 لبنان / Lebanon", "🇮🇶 العراق / Iraq", "🇸🇾 سوريا / Syria", "🇵🇸 فلسطين / Palestine", "🇪🇬 مصر / Egypt", "🇸🇩 السودان / Sudan", "🇸🇴 الصومال / Somalia", "🇲🇷 موريتانيا / Mauritania", "🇲🇦 المغرب / Morocco", "🇩🇿 الجزائر / Algeria", "🇹🇳 تونس / Tunisia", "🇱🇾 ليبيا / Libya"]
-
-# === زر تبديل اللغة ===
-col_lang1, col_lang2, col_lang3 = st.columns([6,2,2])
-with col_lang2:
+# زر اللغة
+c1, c2, c3 = st.columns([6,2,2])
+with c2:
     if st.button("🇸🇦 عربي", use_container_width=True, type="primary" if st.session_state['lang']=='ar' else "secondary"):
         st.session_state['lang'] = 'ar'
         st.rerun()
-with col_lang3:
+with c3:
     if st.button("🇺🇸 English", use_container_width=True, type="primary" if st.session_state['lang']=='en' else "secondary"):
         st.session_state['lang'] = 'en'
         st.rerun()
 
-# === صفحة الهبوط ===
 if st.session_state['show_landing'] and not st.session_state['logged_in']:
     lang = st.session_state['lang']
-    dir_style = "rtl" if lang=='ar' else "ltr"
+    
     st.markdown(f"""
-    <style>
-        .hero {{ background: linear-gradient(135deg,#0a7a42,#0d4a2a); color:white; padding:40px 20px; border-radius:20px; text-align:center; margin-bottom:20px; direction:{dir_style}; }}
-        .feature-card {{ background:white; border:2px solid #0a7a42; padding:20px; border-radius:15px; text-align:center; margin:10px; box-shadow:0 4px 10px rgba(0,0,0,0.1); direction:{dir_style}; }}
-        .price-card {{ background:linear-gradient(135deg,#f0fff4,#e8f5e9); border:3px solid #0a7a42; padding:20px; border-radius:20px; text-align:center; margin:10px; direction:{dir_style}; }}
-        .currency-bar {{ background:#1a1a1a; color:#00ff88; padding:10px; border-radius:10px; text-align:center; font-size:11px; font-weight:700; }}
-    </style>
-    <div class="hero">
-        <h1 style="font-size:42px; margin:0;">🌍 TASHEER AI</h1>
-        <h2 style="font-size:20px; margin:10px 0;">{t('site_title')}</h2>
-        <p style="font-size:16px;">{t('site_sub')}</p>
-        <p style="font-size:12px; margin-top:15px;">📱 00966540450738 | ✉️ report.gomez@gmail.com | 🌐 tasheer-ai.com</p>
-        <p style="font-size:10px; background:rgba(255,255,255,0.2); padding:5px 15px; border-radius:20px; display:inline-block; margin-top:10px;">{t('currencies')}</p>
-    </div>
-    <div class="currency-bar">
-        💵 USD | 🇸🇦 SAR 3.75 | 🇦🇪 AED 3.67 | 🇴🇲 OMR 0.385 | 🇶🇦 QAR 3.64 | 🇰🇼 KWD 0.31 | 🇧🇭 BHD 0.376 | 🇯🇴 JOD 0.71 | 🇸🇾 SYP 13000 | 🇵🇸 ILS 3.7 | 🇪🇬 EGP 50.5 | 🇾🇪 YER 530 | 🇱🇧 LBP 89500 | 🇮🇶 IQD 1310 | 🇸🇩 SDG 600 | 🇲🇦 MAD 10.2 | 🇩🇿 DZD 135 | 🇹🇳 TND 3.1 | 🇱🇾 LYD 4.8 | 🇲🇷 MRU 39.5 | 🇸🇴 SOS 570 | USDT TRC20
+    <div style="background: linear-gradient(135deg,#0a7a42,#0d4a2a); color:white; padding:40px 20px; border-radius:20px; text-align:center;">
+        <h1 style="font-size:42px; margin:0;">🗺️ TASHEER AI - Interactive Global Map</h1>
+        <h2 style="font-size:22px; margin:10px 0;">{"نغطي كل الوطن العربي والعالم - خريطة تفاعلية" if lang=='ar' else "Cover All Arab World & Global - Interactive Map"}</h2>
+        <p style="font-size:12px;">🌐 42 دولة | 27 عملة | 📍 خريطة تفاعلية | tasheer-ai.com | 00966540450738</p>
     </div>
     """, unsafe_allow_html=True)
     
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        st.markdown(f"""
-        <div class="feature-card">
-            <h2>🔍</h2>
-            <h3>{t('check')}</h3>
-            <p style="font-size:12px;">{t('check_desc')}</p>
-        </div>
-        """, unsafe_allow_html=True)
-    with c2:
-        st.markdown(f"""
-        <div class="feature-card">
-            <h2>💱</h2>
-            <h3>{t('curr_title')}</h3>
-            <p style="font-size:12px;">{t('curr_desc')}</p>
-        </div>
-        """, unsafe_allow_html=True)
-    with c3:
-        st.markdown(f"""
-        <div class="feature-card">
-            <h2>📊</h2>
-            <h3>{t('report_title')}</h3>
-            <p style="font-size:12px;">{t('report_desc')}</p>
-        </div>
-        """, unsafe_allow_html=True)
+    st.markdown(f"### {'🗺️ الخريطة التفاعلية - اضغط على أي دولة' if lang=='ar' else '🗺️ Interactive Map - Click Any Country'}")
     
-    st.markdown(f"### {t('packages')}")
-    cols = st.columns(3)
-    for idx, (key, data) in enumerate(PRICING.items()):
-        with cols[idx % 3]:
-            name = data['name_ar'] if lang=='ar' else data['name_en']
-            feats = data['features_ar'] if lang=='ar' else data['features_en']
+    if MAP_AVAILABLE:
+        # === خريطة Folium تفاعلية ===
+        m = folium.Map(location=[25, 20], zoom_start=2.5, tiles="OpenStreetMap")
+        
+        # أضف كل الدول
+        for country_name, data in COUNTRIES_COORDS.items():
+            is_arab = data['code'] in ["SA","AE","QA","KW","BH","OM","YE","JO","LB","IQ","SY","PS","EG","SD","SO","MR","MA","DZ","TN","LY","DJ","KM"]
+            color = "green" if is_arab else "blue"
+            icon_color = "darkgreen" if is_arab else "darkblue"
+            
+            popup_html = f"""
+            <div style="font-family: Arial; direction: rtl; text-align: center; min-width: 200px;">
+                <h3 style="margin:0; color:{icon_color};">{country_name}</h3>
+                <p style="margin:5px 0;"><b>Code:</b> {data['code']}<br>
+                <b>Capital:</b> {data['capital']}<br>
+                <b>Currency:</b> {data['currency']}<br>
+                <b>Lat/Lon:</b> {data['lat']:.2f}, {data['lon']:.2f}</p>
+                <p style="background:#0a7a42; color:white; padding:5px 10px; border-radius:15px; font-size:11px;">TASHEER AI - {data['code']} Supported ✅</p>
+                <p style="font-size:10px;">💳 USDT: TFMRQFHgN8w9q1VM7k8xiwxcKAGC5c2mMH</p>
+            </div>
+            """
+            
+            folium.Marker(
+                location=[data['lat'], data['lon']],
+                popup=folium.Popup(popup_html, max_width=300),
+                tooltip=f"{country_name} - {data['code']} - {data['currency']}",
+                icon=folium.Icon(color=color, icon="flag" if is_arab else "globe", prefix="fa")
+            ).add_to(m)
+        
+        # عرض الخريطة
+        map_data = st_folium(m, width=None, height=500, returned_objects=["last_object_clicked"])
+        
+        if map_data["last_object_clicked"]:
+            clicked = map_data["last_object_clicked"]
+            st.success(f"📍 اخترت: Lat {clicked['lat']:.2f}, Lon {clicked['lng']:.2f} - أقرب دولة: {min(COUNTRIES_COORDS.items(), key=lambda x: abs(x[1]['lat']-clicked['lat'])+abs(x[1]['lon']-clicked['lng']))[0]}")
+    else:
+        # === خريطة بديلة باستخدام st.map ===
+        st.info("🗺️ خريطة بديلة - تظهر كل الدول")
+        df = pd.DataFrame([
+            {"lat": data["lat"], "lon": data["lon"], "country": name, "code": data["code"], "currency": data["currency"]}
+            for name, data in COUNTRIES_COORDS.items()
+        ])
+        st.map(df, latitude="lat", longitude="lon", size=20, color="#0a7a42")
+        st.dataframe(df, use_container_width=True)
+        
+        # خريطة ثانية تفاعلية بالأعلام
+        st.markdown("#### 🌍 كل الدول على الخريطة")
+        selected_country = st.selectbox("اختر دولة لعرضها على الخريطة" if lang=='ar' else "Select Country to View on Map", list(COUNTRIES_COORDS.keys()))
+        if selected_country:
+            data = COUNTRIES_COORDS[selected_country]
             st.markdown(f"""
-            <div class="price-card">
-                <h3 style="margin:0; color:#0a7a42;">{name}</h3>
-                <h1 style="margin:10px 0; color:#0a7a42;">💵 ${data['usd']:,}</h1>
-                <p style="font-size:11px; font-weight:700; line-height:1.5;">
-                🇸🇦 {data['sar']:,} SAR<br>
-                🇦🇪 {data['aed']:,} AED | 🇴🇲 {data['omr']} OMR<br>
-                🇲🇦 {data['mad']:,} MAD | 🇩🇿 {data['dzd']:,} DZD<br>
-                🇪🇬 {data['egp']:,} EGP | 🇸🇾 {data['syp']:,} SYP<br>
-                <span style="font-size:9px; color:gray;">{data['days']} {t('day')} | USDT {data['usdt']}</span>
-                </p>
-                <p style="font-size:10px; text-align:{'right' if lang=='ar' else 'left'}; margin-top:10px;">
-                {"<br>".join([f"✅ {f}" for f in feats])}
-                </p>
+            <div style="background:white; border:2px solid #0a7a42; padding:15px; border-radius:15px; text-align:center;">
+                <h2>{selected_country}</h2>
+                <p><b>Code:</b> {data['code']} | <b>Capital:</b> {data['capital']} | <b>Currency:</b> {data['currency']}</p>
+                <p><b>Coordinates:</b> {data['lat']}, {data['lon']}</p>
+                <p style="background:#0a7a42; color:white; padding:8px; border-radius:10px;">✅ {selected_country} Supported - TASHEER AI</p>
             </div>
             """, unsafe_allow_html=True)
+            df_single = pd.DataFrame([{"lat": data["lat"], "lon": data["lon"]}])
+            st.map(df_single, zoom=4)
     
     st.markdown("---")
-    st.markdown(f"### 🌍 {t('coverage')}")
-    st.markdown(f"""
-    <div style="text-align:center; font-size:24px; letter-spacing:5px; padding:15px; background:#f8f9fa; border-radius:15px; direction:{dir_style};">
-    🇸🇦 🇦🇪 🇶🇦 🇰🇼 🇧🇭 🇴🇲 🇾🇪 🇯🇴 🇱🇧 🇮🇶 🇸🇾 🇵🇸 🇪🇬 🇸🇩 🇸🇴 🇲🇷 🇲🇦 🇩🇿 🇹🇳 🇱🇾
-    <br><span style="font-size:12px; letter-spacing:1px;">{t('coverage_countries')}</span>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown(f"### {'🌍 نغطي كل الوطن العربي - 22 دولة' if lang=='ar' else '🌍 Arab World Coverage - 22 Countries'}")
+    st.markdown("**SA AE QA KW BH OM YE JO LB IQ SY PS EG SD SO MR MA DZ TN LY DJ KM**")
+    st.markdown("السعودية - الإمارات - قطر - الكويت - البحرين - عمان - اليمن - الأردن - لبنان - العراق - سوريا - فلسطين - مصر - السودان - الصومال - موريتانيا - المغرب - الجزائر - تونس - ليبيا - جيبوتي - جزر القمر")
     
-    c1, c2, c3 = st.columns([1,2,1])
-    with c2:
-        if st.button(t('enter_btn'), type="primary", use_container_width=True):
+    st.markdown(f"### {'🌐 نغطي العالم - 20 دولة' if lang=='ar' else '🌐 Global Coverage - 20 Countries'}")
+    st.markdown("**US GB EU TR IN PK BD PH ID NG ET KE ZA BR CA AU CN RU MY SG**")
+    st.markdown("أمريكا - بريطانيا - أوروبا - تركيا - الهند - باكستان - بنغلاديش - الفلبين - إندونيسيا - نيجيريا - إثيوبيا - كينيا - جنوب أفريقيا - البرازيل - كندا - أستراليا - الصين - روسيا - ماليزيا - سنغافورة")
+    
+    col1, col2, col3 = st.columns([1,2,1])
+    with col2:
+        if st.button("🚀 دخول للمنصة - مع الخريطة التفاعلية" if lang=='ar' else "🚀 Enter Platform - With Interactive Map", type="primary", use_container_width=True):
             st.session_state['show_landing'] = False
             st.rerun()
         st.markdown(f"""
-        <div style="text-align:center; margin-top:15px; direction:{dir_style};">
-            <p style="font-size:12px;">📱 WhatsApp: 00966540450738 | ✉️ {EMAIL}</p>
-            <p style="font-size:10px;">🌐 Domain: tasheer-ai.com | 💳 Payment: USDT TRC20</p>
-            <a href="https://wa.me/966540450738" target="_blank" style="background:#25D366; color:white; padding:10px 20px; border-radius:25px; text-decoration:none; font-weight:700; display:inline-block; margin-top:10px;">💬 {t('contact')}</a>
+        <div style="text-align:center; margin-top:15px;">
+            <p>📱 00966540450738 | ✉️ {EMAIL} | 🌐 tasheer-ai.com</p>
+            <p style="font-size:10px;">TFMRQFHgN8w9q1VM7k8xiwxcKAGC5c2mMH - USDT TRC20</p>
+            <a href="https://wa.me/966540450738" target="_blank" style="background:#25D366; color:white; padding:10px 20px; border-radius:25px; text-decoration:none; font-weight:700; display:inline-block; margin-top:10px;">💬 تواصل واتساب - مع الخريطة</a>
         </div>
         """, unsafe_allow_html=True)
     st.stop()
 
-# === تسجيل الدخول ===
+# === بعد الدخول - مع الخريطة ===
 db = st.session_state['users_db']
 if not st.session_state['logged_in']:
-    st.markdown(f"<div style='text-align:center;'><h1>🔐 {t('login')} TASHEER AI - tasheer-ai.com</h1></div>", unsafe_allow_html=True)
-    col1, col2 = st.columns(2)
-    with col1:
-        with st.form("login"):
-            u = st.text_input(t('username'))
-            p = st.text_input(t('password'), type="password")
-            if st.form_submit_button(t('login'), type="primary", use_container_width=True):
-                if u in db and db[u]["password"] == p:
-                    st.session_state['logged_in'] = True
-                    st.session_state['username'] = u
-                    st.session_state['show_landing'] = False
-                    st.rerun()
-    with col2:
-        st.markdown(f"### {t('register')} - 20 {t('curr_title')}")
-        new_user = st.text_input(t('new_user'))
-        new_pass = st.text_input(t('new_pass'), type="password")
-        new_email = st.text_input(t('email'))
-        new_country = st.selectbox(t('country'), COUNTRIES)
-        plan = st.selectbox(t('package'), list(PRICING.keys()))
-        data = PRICING[plan]
-        st.info(f"${data['usd']:,} = {data['sar']:,} SAR = {data['mad']:,} MAD = {data['dzd']:,} DZD")
-        st.code(WALLET)
-        st.image(QR_URL, width=200)
-        if st.button(t('pay_activate'), type="primary", use_container_width=True):
-            if new_user and new_pass and new_user not in db:
-                sub_end = datetime.now() + timedelta(days=data['days'])
-                db[new_user] = {"password": new_pass, "name": new_user, "email": new_email, "phone": "00966540450738", "sub_end": sub_end, "active": True, "usd": data['usd'], "country": new_country, "join_date": datetime.now().strftime('%Y-%m-%d'), "role": "user"}
-                st.success(f"✅ {new_user}")
+    st.markdown("### 🔐 دخول - مع خريطة تفاعلية")
+    with st.form("login"):
+        u = st.text_input("اسم المستخدم")
+        p = st.text_input("كلمة المرور", type="password")
+        if st.form_submit_button("دخول", type="primary"):
+            if u in db and db[u]["password"] == p:
                 st.session_state['logged_in'] = True
-                st.session_state['username'] = new_user
+                st.session_state['username'] = u
+                st.session_state['show_landing'] = False
                 st.rerun()
-    if st.button(t('home')):
+    if st.button("🏠 الموقع الرئيسي مع الخريطة"):
         st.session_state['show_landing'] = True
         st.rerun()
     st.stop()
 
 u = st.session_state['username']
 user = db[u]
-is_admin = user.get('role') == 'admin'
 days_left = (user["sub_end"] - datetime.now()).days
 
-st.markdown(f"""
-<div style="background:#0a7a42; color:white; padding:10px 20px; border-radius:10px; text-align:center;">
-    🌐 tasheer-ai.com | 👑 TASHEER AI | 💱 20 {t('curr_title')} | 👤 {user['name']} | {t('days_left')} {days_left} {t('day')} | 📱 00966540450738 | {t('lang')}: {st.session_state['lang']}
-</div>
-""", unsafe_allow_html=True)
+st.success(f"✅ {user['name']} - باقي {days_left} يوم - مع خريطة تفاعلية 42 دولة")
 
-if is_admin:
-    tabs = st.tabs([f"👑 {t('admin_panel')}", f"📊 {t('profit')}", f"👥 {t('users')}", f"🌐 {t('website')}", f"💳 {t('renew')}"])
-    with tabs[0]:
-        total_users = len(db)
-        total_revenue = sum([x['usd'] for x in db.values() if x.get('role')!='admin'])
-        conv = convert_currencies(total_revenue)
-        c1, c2, c3 = st.columns(3)
-        with c1:
-            st.metric(t('total_users'), total_users)
-        with c2:
-            st.metric(t('total_profit_usd'), f"${total_revenue:,}")
-        with c3:
-            st.metric(t('total_profit_sar'), f"{conv['sar']:,}")
-        st.markdown(f"**20 Currencies:** ${conv['usd']:,} USD | {conv['sar']:,} SAR | {conv['mad']:,} MAD | {conv['dzd']:,} DZD | {conv['syp']:,} SYP")
-        if st.button(t('landing_preview')):
-            st.session_state['show_landing'] = True
-            st.rerun()
-    with tabs[1]:
-        st.markdown(f"### {t('profit_by_country')}")
-        country_stats = {}
-        for udata in db.values():
-            if udata.get('role') != 'admin':
-                c = udata.get('country','غير معروف')
-                country_stats[c] = country_stats.get(c,0) + udata['usd']
-        for country, total in country_stats.items():
-            conv = convert_currencies(total)
-            st.markdown(f"{country}: ${total:,} = {conv['sar']:,} SAR = {conv['mad']:,} MAD")
-    with tabs[2]:
-        for uname, udata in db.items():
-            days = (udata['sub_end'] - datetime.now()).days
-            st.markdown(f"**{uname}** - {udata['name']} - {udata.get('country','')} - {days} {t('day')} - ${udata['usd']:,}")
-            if st.button(f"{t('extend_30')} {uname}", key=f"ext_{uname}"):
-                db[uname]['sub_end'] += timedelta(days=30)
-                st.rerun()
-    with tabs[3]:
-        st.markdown(f"### {t('domain_info')}")
-        st.code(WALLET)
-    with tabs[4]:
-        st.code(WALLET)
-        st.image(QR_URL)
-else:
-    tabs = st.tabs([f"🔍 {t('check_tab')}", f"💱 20 {t('curr_title')}", f"🌐 {t('website')}"])
-    with tabs[0]:
-        p_no = st.text_input(t('passport'), "A12345678")
-        visa_country = st.selectbox(t('visa_country'), COUNTRIES)
-        if st.button(t('check_btn'), type="primary"):
-            st.success(f"{p_no} - {visa_country} - {t('valid')}")
-    with tabs[1]:
-        sel = st.selectbox(t('package'), list(PRICING.keys()))
-        data = PRICING[sel]
-        st.info(f"${data['usd']:,} = {data['sar']:,} SAR = {data['mad']:,} MAD")
-    with tabs[2]:
-        if st.button(t('landing_preview')):
-            st.session_state['show_landing'] = True
-            st.rerun()
+tab1, tab2, tab3 = st.tabs(["🗺️ الخريطة التفاعلية", "🌍 كل الدول", "💳 تجديد"])
 
-if st.button(t('logout')):
+with tab1:
+    st.markdown("### 🗺️ خريطة تفاعلية - 42 دولة - اضغط على أي دولة")
+    
+    if MAP_AVAILABLE:
+        m = folium.Map(location=[25, 20], zoom_start=2, tiles="CartoDB positron")
+        for country_name, data in COUNTRIES_COORDS.items():
+            is_arab = data['code'] in ["SA","AE","QA","KW","BH","OM","YE","JO","LB","IQ","SY","PS","EG","SD","SO","MR","MA","DZ","TN","LY","DJ","KM"]
+            color = "green" if is_arab else "blue"
+            folium.Marker(
+                location=[data['lat'], data['lon']],
+                popup=f"{country_name}<br>Code: {data['code']}<br>Currency: {data['currency']}<br>Capital: {data['capital']}<br>TASHEER AI Supported ✅",
+                tooltip=f"{country_name} - {data['code']}",
+                icon=folium.Icon(color=color, icon="flag")
+            ).add_to(m)
+        st_folium(m, width=None, height=500)
+    else:
+        df = pd.DataFrame([{"lat": v["lat"], "lon": v["lon"], "country": k} for k, v in COUNTRIES_COORDS.items()])
+        st.map(df)
+        st.dataframe(df, use_container_width=True)
+
+with tab2:
+    st.markdown("### 🌍 كل الدول - 42 دولة - عربي وعالمي")
+    for name, data in COUNTRIES_COORDS.items():
+        st.markdown(f"**{name}** - {data['code']} - {data['capital']} - {data['currency']} - {data['lat']:.2f}, {data['lon']:.2f}")
+
+with tab3:
+    st.code(WALLET)
+    st.image(QR_URL)
+    if st.button("🏠 رجوع للخريطة التفاعلية"):
+        st.session_state['show_landing'] = True
+        st.rerun()
+
+if st.button("🚪 خروج"):
     st.session_state['logged_in'] = False
     st.session_state['show_landing'] = True
     st.rerun()
