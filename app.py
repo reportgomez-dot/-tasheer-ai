@@ -3,9 +3,10 @@ import time
 
 st.set_page_config(page_title="UN-BIO-SHIELD AI - 50M/100M", layout="centered")
 
+WALLET = "0xYOUR_REAL_BEP20_ADDRESS_HERE"  # <-- غير هذا بعنوانك الحقيقي
+
 st.title("UN-BIO-SHIELD AI - 50M / 100M SAR")
 st.caption("Serial: UN-MODEL-50M-ARAMCO-001 | UNGM 1191371")
-
 st.subheader("جرب النموذج الآن - Live API")
 
 gene = st.text_input("الصق التسلسل الجيني", value="ATGCGTAGCGTGGCTAGGTAG")
@@ -15,27 +16,30 @@ if st.button("افحص الآن - 10 ثواني"):
     with st.spinner("جاري الفحص..."):
         time.sleep(2)
         if "CGTAG" in gene:
-            st.error("CONTAMINATED 95% - خطر - أوقف المحطة")
+            st.error("CONTAMINATED 95% - خطر")
         else:
             st.success("CLEAN 98% - نظيف")
-        st.write(f"الشركة: {company}")
-        st.write("الدقة: 94% | السيريال: UN-MODEL-50M-ARAMCO-001")
-        st.markdown("**التكلفة: 5000 SAR / فحص | اشتراك 50M-100M / سنة**")
+        st.write(f"الشركة: {company} - الدقة 94%")
 
 st.markdown("---")
-st.success("الموقع اشتغل - الآن ارفع صور الجوازات (JPG, PNG)")
+st.subheader("💳 Binance Pay - ادفع الآن")
 
-uploaded = st.file_uploader("ارفع صور الجوازات (JPG, PNG)", type=["jpg","png"], accept_multiple_files=True)
+col1, col2 = st.columns(2)
+with col1:
+    st.markdown("**ARAMCO - 50M SAR**")
+    st.code("~13,333,333 USDT")
+    st.code(WALLET)
+    if st.button("نسخ عنوان أرامكو 50M"):
+        st.success("تم النسخ - أرسل 13.3M USDT BEP20")
 
-if uploaded:
-    for file in uploaded:
-        st.image(file, caption=file.name)
+with col2:
+    st.markdown("**NEOM - 100M SAR**")
+    st.code("~26,666,666 USDT")
+    st.code(WALLET)
+    if st.button("نسخ عنوان نيوم 100M"):
+        st.success("تم النسخ - أرسل 26.6M USDT BEP20")
 
-st.markdown("---")
-st.subheader("Binance Pay USDT BEP20")
-st.code("YOUR_WALLET_BEP20_ADDRESS")
-st.write("50M SAR = ~13.3M USDT | 100M SAR = ~26.6M USDT")
-
-if st.button("تم الدفع - فعل الاشتراك"):
+st.info("بعد الدفع اضغط تفعيل")
+if st.button("✅ تم الدفع - فعل الاشتراك"):
     st.balloons()
-    st.success("تم التفعيل - API Key: UN-MODEL-50M-ARAMCO-001-ACTIVE")
+    st.success("تم التفعيل - API Key: UN-MODEL-ACTIVE-50M-100M")
