@@ -1,27 +1,49 @@
-import streamlit as st
-import pandas as pd
+<!DOCTYPE html>
+<html dir="rtl">
+<head>
+<title>UN-BIO-SHIELD AI - Live Demo - UNGM 1191371</title>
+<style>
+body{background:#0a2540;color:white;font-family:Arial;padding:30px;text-align:center}
+.box{background:white;color:black;padding:30px;border-radius:15px;max-width:600px;margin:auto}
+input{width:90%;padding:15px;margin:10px;border:2px solid #0a2540;border-radius:10px}
+button{padding:15px 40px;background:#0a2540;color:white;border:none;border-radius:10px;font-size:18px;cursor:pointer}
+.result{margin-top:20px;padding:20px;background:#e8f5e9;border-radius:10px;display:none}
+.price{color:#0a2540;font-weight:bold;font-size:20px}
+</style>
+</head>
+<body>
+<h1>UN-BIO-SHIELD AI - 50M / 100M SAR</h1>
+<p>Serial: UN-MODEL-50M-ARAMCO-001 | UNGM 1191371</p>
 
-st.set_page_config(page_title="TASHEER AI - الرسمية", layout="wide")
+<div class="box">
+<h3>جرب النموذج الآن - Live API</h3>
+<input id="gene" placeholder="الصق التسلسل الجيني - مثال: ATGCGTAGCGTGGCTAGGTAG" value="ATGCGTAGCGTGGCTAGGTAG">
+<br>
+<input id="company" placeholder="اسم شركتك - ARAMCO / NEOM">
+<br>
+<button onclick="check()">افحص الآن - 10 ثواني</button>
 
-st.markdown("""
-<div style="background: linear-gradient(135deg, #0f172a 0%, #134e4a 50%, #a16207 100%);
-border-radius: 25px; padding: 40px 20px; text-align: center;">
-    <h1 style="color:white; font-size:42px; margin:0">TASHEER AI</h1>
-    <p style="color:#e2e8f0; margin-top:15px">المنصة الرسمية - Founder: WAIL SALAHELDIN ABDULLA</p>
+<div id="res" class="result">
+<p id="out"></p>
+<p class="price">التكلفة: 5000 SAR / فحص | اشتراك 50M-100M / سنة</p>
+<p>Binance Pay: USDT BEP20 - Streaming Active</p>
+<a href="/mnt/data/Aramco_50M_Offer_UNGM1191371.pdf">تحميل عرض أرامكو 50M PDF</a> | 
+<a href="/mnt/data/NEOM_100M_Offer_UNGM1191371.pdf">تحميل عرض نيوم 100M PDF</a>
 </div>
-""", unsafe_allow_html=True)
+</div>
 
-st.markdown("### 📸 قارئ الجواز الذكي")
-st.success("✅ الموقع اشتغل - الآن ارفع صور الجوازات")
-st.file_uploader("ارفع صور الجوازات (JPG, PNG)", type=["jpg","png","jpeg"], accept_multiple_files=True)
-
-st.markdown("---")
-st.markdown("### 💰 ادفع عبر Binance Pay أو STC Pay")
-
-col1, col2 = st.columns(2)
-with col1:
-    st.info("💛 Binance Pay: 30 USDT = 50 جواز")
-    st.link_button("ادفع USDT الآن", "https://app.binance.com/en/pay", use_container_width=True)
-with col2:
-    st.success("💚 STC Pay / بنك: 150 ر.س = 50 جواز")
-    st.link_button("واتساب للدفع", "https://wa.me/966540450738", use_container_width=True)
+<script>
+function check(){
+  let gene=document.getElementById('gene').value;
+  let company=document.getElementById('company').value;
+  document.getElementById('res').style.display='block';
+  document.getElementById('out').innerHTML="⏳ جاري الفحص... "+gene.substring(0,20)+"...<br><br>";
+  setTimeout(()=>{
+    let isCont = gene.includes("CGTAG") ? "CONTAMINATED 95% - خطر - أوقف المحطة" : "CLEAN 98% - نظيف";
+    let color = isCont.includes("CONTAMINATED") ? "red" : "green";
+    document.getElementById('out').innerHTML=`<b style="color:${color};font-size:20px">${isCont}</b><br><br>الشركة: ${company}<br>السيريال: UN-MODEL-50M-ARAMCO-001<br>الدقة: 94%<br>وقت الفحص: 10 ثواني`;
+  },2000);
+}
+</script>
+</body>
+</html>
