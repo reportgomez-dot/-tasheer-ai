@@ -1,61 +1,40 @@
-import streamlit as st
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
 
-st.set_page_config(page_title="UN-BIO-SHIELD AI - Live Model", layout="centered")
+contract GeneBalance {
+    string public name = "GENE Balance";
+    string public symbol = "GENE";
+    uint8 public decimals = 18;
+    uint256 public totalSupply;
+    
+    mapping(address => uint256) public balanceOf;
+    mapping(address => string) public myGene;
+    
+    event NewBalance(address indexed user, string gene, uint256 amount);
 
-st.markdown("# UN-BIO-SHIELD AI - LIVE MODEL")
-st.markdown("**AI-Powered Bio Shield - Procurement Offer - Live Model Deployed**")
+    // هذه هي الدالة اللي تصنع الرصيد من الجين
+    function createBalanceFromGene(string memory _geneCode) public {
+        require(bytes(_geneCode).length > 10, "كود الجين قصير جدا");
+        require(bytes(myGene[msg.sender]).length == 0, "عندك رصيد من قبل");
 
-st.markdown("---")
+        uint256 geneLength = bytes(_geneCode).length;
+        
+        // المعادلة: كل حرف = 1000 وحدة
+        // جين 500 حرف = 500,000 GENE
+        uint256 amount = geneLength * 1000 * 10**decimals;
+        
+        myGene[msg.sender] = _geneCode;
+        balanceOf[msg.sender] += amount;
+        totalSupply += amount;
 
-# قسم الخبرة الجديد
-st.markdown("### 🏛️ Enterprise Vendor Background")
-col1, col2 = st.columns(2)
+        emit NewBalance(msg.sender, _geneCode, amount);
+    }
 
-with col1:
-    st.info("""
-    **Vendor Experience:**
-    - Ex-Vendor Coordinator - Saudi Company Ltd
-    - King Faisal & King Fahad Research Centers
-    - Ministry of Interior & National Guard
-    - Oracle ERP & Dynamics 365 Specialist
-    - UNGM Vendor No: 1191371
-    """)
-
-with col2:
-    st.success("""
-    **Enterprise Integration Ready:**
-    - Oracle ERP / P2P Integration
-    - Dynamics 365 Integration
-    - SAP Ariba Compatible
-    - Serial: UN-MODEL-50M-ARAMCO-001
-    """)
-
-st.markdown("---")
-
-# قسم الأسعار
-c1, c2 = st.columns(2)
-with c1:
-    st.metric("ARAMCO PRICE", "50M SAR", "13,333,333 USDT")
-with c2:
-    st.metric("NEOM PRICE", "100M SAR", "26,666,666 USDT")
-
-st.markdown("---")
-
-# قسم التجربة الحية
-st.markdown("### 🧬 Live Test - Try in 10 Seconds")
-gene = st.text_input("Enter Gene Sequence", "ATGCGTAGCGTGGCTAGGTAG")
-
-if st.button("Analyze"):
-    if "ATGCGT" in gene:
-        st.error("Result: CONTAMINATED 95% - Immediate alert")
-    else:
-        st.success("Result: CLEAN 98% - Safe")
-
-st.markdown("---")
-
-# قسم الدفع
-st.markdown("### 💳 Payment")
-st.markdown("## Binance Pay ID: 457890758")
-st.code("Binance Pay ID: 457890758 - Network BEP20 USDT")
-st.markdown("Website: tasheer-ai-juub2hzyqf9boqzthpwv4n.streamlit.app")
-st.caption("UNGM 1191371 | Accuracy 94% | Instant API Delivery")
+    // تحويل الرصيد
+    function transfer(address to, uint256 amount) public returns (bool) {
+        require(balanceOf[msg.sender] >= amount, "رصيدك ما يكفي");
+        balanceOf[msg.sender] -= amount;
+        balanceOf[to] += amount;
+        return true;
+    }
+}
