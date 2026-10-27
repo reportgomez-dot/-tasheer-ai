@@ -1,40 +1,17 @@
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+import streamlit as st
 
-contract GeneBalance {
-    string public name = "GENE Balance";
-    string public symbol = "GENE";
-    uint8 public decimals = 18;
-    uint256 public totalSupply;
-    
-    mapping(address => uint256) public balanceOf;
-    mapping(address => string) public myGene;
-    
-    event NewBalance(address indexed user, string gene, uint256 amount);
+st.title("UN-BIO-SHIELD - Gene Balance")
+st.write("تصنيع رصيد من أكواد الجينات")
 
-    // هذه هي الدالة اللي تصنع الرصيد من الجين
-    function createBalanceFromGene(string memory _geneCode) public {
-        require(bytes(_geneCode).length > 10, "كود الجين قصير جدا");
-        require(bytes(myGene[msg.sender]).length == 0, "عندك رصيد من قبل");
+gene = st.text_input("Enter Gene Sequence", "ATCGATCG")
 
-        uint256 geneLength = bytes(_geneCode).length;
-        
-        // المعادلة: كل حرف = 1000 وحدة
-        // جين 500 حرف = 500,000 GENE
-        uint256 amount = geneLength * 1000 * 10**decimals;
-        
-        myGene[msg.sender] = _geneCode;
-        balanceOf[msg.sender] += amount;
-        totalSupply += amount;
-
-        emit NewBalance(msg.sender, _geneCode, amount);
-    }
-
-    // تحويل الرصيد
-    function transfer(address to, uint256 amount) public returns (bool) {
-        require(balanceOf[msg.sender] >= amount, "رصيدك ما يكفي");
-        balanceOf[msg.sender] -= amount;
-        balanceOf[to] += amount;
-        return true;
-    }
-}
+if st.button("Analyze / Create Balance"):
+    if len(gene) > 10:
+        balance = len(gene) * 1000
+        st.success(f"تم تصنيع الرصيد: {balance} GENE")
+        st.metric("رصيدك", f"{balance} GENE")
+        st.metric("Award Price", "50M SAR")
+        st.metric("Recom Price", "100M SAR")
+        st.info(f"Binance Pay ID: 457890758 - Network BEP20 USDT")
+    else:
+        st.error("كود الجين قصير جدا")
