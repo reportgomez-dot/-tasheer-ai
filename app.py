@@ -4,8 +4,7 @@ import streamlit.components.v1 as components
 st.set_page_config(page_title="GENE Factory - 1000 Trillion", layout="centered")
 st.title("🏭 مصنع GENE - 1000 تريليون")
 st.write("اضغط الزر يصنع لك 1,000,000,000,000,000 حبة مرة وحدة")
-
-CONTRACT_ADDRESS = "0x_YOUR_CONTRACT_ADDRESS_HERE"
+CONTRACT_ADDRESS = "0x123... عنوان عقدك الحقيقي هنا"
 
 html_code = f"""
 <script src="https://cdn.jsdelivr.net/npm/web3@1.8.2/dist/web3.min.js"></script>
